@@ -8,9 +8,9 @@ app.use(express.static(path.join(__dirname)));
 
 // Serve the main HTML file for all routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'financial-view-clone.html'));
+    res.sendFile(path.join(__dirname, 'financial-view-v2.html'));
 });
 
 app.listen(PORT, () => {
-  console.log('Financial View running on port ' + PORT);
+    console.log('Financial View running on port ' + PORT);
 });
