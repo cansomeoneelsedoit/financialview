@@ -1580,7 +1580,11 @@ function renderCompaniesContent(main, fromPortal) {
 
 // ── DATA ──────────────────────────────────────────
 let climeOSView = 'dashboard';
-let cosUserRole = 'staff'; // staff | client | partner
+let cosUserRole = 'staff';
+let cosIMAModel = 0;
+let cosIMATab = 'holdings';
+let cosAccFilter = 'all';
+let cosIQFilter = 'All'; // staff | client | partner
 
 const CLIME_STOCKS = [
   {ticker:'CBA.AX',  company:'Commonwealth Bank',    tier:'A', sector:'Financials',    price:168.20, iv:142.10, ivFwd:148.30, mos:-18.4, signal:'SELL',        eqs:82, ers:88, div:3.1, wacc:10.5, nroe:18.2},
@@ -2678,7 +2682,7 @@ function cosIQ() {
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
         <div style="display:flex;gap:3px;background:var(--bg-page);border-radius:6px;padding:3px;border:1px solid var(--border)">
-          ${['All','Model Changes','Client Overrides','CCAS'].map((f,i)=>`<button class="btn" style="font-size:12px;border:none;background:${i===0?'#fff':'transparent'};color:${i===0?'var(--near-black)':'var(--muted)'}">${f}</button>`).join('')}
+          ${['All','Model Changes','Client Overrides','CCAS','PTC Failed'].map(f=>`<button class="btn" style="font-size:12px;border:none;background:${cosIQFilter===f?'#fff':'transparent'};color:${cosIQFilter===f?'var(--near-black)':'var(--muted)'}" onclick="cosIQFilter='${f}';cosIQRefresh()">${f}</button>`).join('')}
         </div>
         <select class="btn btn-ghost" style="font-size:12.5px">
           <option>All models</option><option>ASI</option><option>ASG</option><option>CAM</option>
@@ -2720,6 +2724,7 @@ function cosIQ() {
 let cosICSelected = 'IC-2026-004';
 
 function cosICTool() {
+  if (!cosICSelected || !CLIME_IC_PAPERS.find(p=>p.id===cosICSelected)) cosICSelected = CLIME_IC_PAPERS[0]?.id;
   const paper = CLIME_IC_PAPERS.find(p=>p.id===cosICSelected) || CLIME_IC_PAPERS[0];
 
   const paperList = CLIME_IC_PAPERS.map(p => {
@@ -2977,7 +2982,7 @@ function cosAccounts() {
         ${cosStatCard('Apex Status','● Live','Last sync 08:14','var(--emerald)')}
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-        ${['All','Premium','ASI','ASG','The View','CCAS'].map((f,i)=>`<button class="btn ${i===0?'btn-primary':'btn-ghost'}" style="font-size:12.5px">${f}</button>`).join('')}
+        ${['All','Premium','ASI','ASG','The View','CCAS'].map((f,i)=>`<button class="btn" style="font-size:12.5px;background:${cosAccFilter===f?'var(--near-black)':'transparent'};color:${cosAccFilter===f?'#fff':'var(--muted)'};border:1px solid ${cosAccFilter===f?'var(--near-black)':'var(--border)'}" onclick="cosAccFilter='${f}';cosAccRefresh()">${f}</button>`).join('')}
         <input placeholder="Search accounts…" class="btn btn-ghost" style="font-size:12.5px;margin-left:auto;width:200px">
       </div>
       <div class="card section-card">
@@ -3043,62 +3048,145 @@ function cosCAM() {
 }
 
 // ── IMA MODELS ─────────────────────────────────────────────────────
+function cosIMARefresh() {
+  const main = document.getElementById('main-content');
+  if (main) main.innerHTML = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">' + cosRenderView('ima') + '</div>';
+}
+
 function cosIMA() {
   const models = [
-    {name:'Aust Share Income',   code:'ASI', accounts:47, aum:'$284M', stocks:18},
-    {name:'Aust Share Growth',   code:'ASG', accounts:31, aum:'$198M', stocks:22},
-    {name:'The View',            code:'TV',  accounts:12, aum:'$148M', stocks:15},
-    {name:'Fixed Interest',      code:'FI',  accounts:8,  aum:'$82M',  stocks:8},
-    {name:'Opportunities IMA',   code:'OPP', accounts:5,  aum:'$64M',  stocks:12},
+    {name:'Aust Share Income',code:'ASI',accounts:47,aum:'$284M',stocks:18},
+    {name:'Aust Share Growth',code:'ASG',accounts:31,aum:'$198M',stocks:22},
+    {name:'The View',code:'TV',accounts:12,aum:'$148M',stocks:15},
+    {name:'Fixed Interest',code:'FI',accounts:8,aum:'$82M',stocks:8},
+    {name:'Opportunities IMA',code:'OPP',accounts:5,aum:'$64M',stocks:12},
   ];
-  return `<div style="flex:1;display:flex;overflow:hidden">
-    <div style="width:240px;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;background:var(--bg-page)">
-      <div style="padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:13px;font-weight:600;color:var(--near-black)">IMA Models</span>
-        <button class="btn btn-primary" style="font-size:12px;padding:4px 10px">+ New</button>
-      </div>
-      <div style="flex:1;overflow:auto;padding:8px">
-        ${models.map((m,i)=>`
-          <div class="card" style="padding:11px;margin-bottom:6px;cursor:pointer;border-color:${i===0?'var(--blue)':'var(--border)'}">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-              <div style="width:26px;height:26px;border-radius:6px;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">${m.code}</div>
-              <span style="font-size:13px;font-weight:600;color:var(--near-black)">${m.name}</span>
-            </div>
-            <div style="display:flex;gap:10px;font-size:12px;color:var(--muted)">${m.accounts} accts · ${m.aum} · ${m.stocks} stocks</div>
-          </div>`).join('')}
-      </div>
-    </div>
-    <div style="flex:1;overflow:auto;padding:20px 24px">
-      <div style="margin-bottom:14px">
-        <h2 style="font-size:18px;font-weight:700;color:var(--near-black);margin-bottom:3px">Aust Share Income (ASI)</h2>
-        <p style="font-size:13px;color:var(--muted)">47 accounts · $284M AUM · 18 holdings · Updated 03 Apr 2026</p>
-      </div>
-      <div style="display:flex;gap:3px;background:var(--bg-page);border-radius:6px;padding:3px;border:1px solid var(--border);width:fit-content;margin-bottom:16px">
-        ${['Holdings','Recommendations','✦ AI Rebalance','History'].map((t,i)=>`<button class="btn" style="font-size:12.5px;border:none;background:${i===0?'#fff':'transparent'};color:${i===0?'var(--near-black)':'var(--muted)'}">${t}</button>`).join('')}
-      </div>
-      <div class="card section-card">
-        <table class="data-table">
-          ${cosTableHdr('Ticker','Company','Current %','Target %','Δ','Signal','Action')}
-          <tbody>
-            ${CLIME_STOCKS.slice(0,8).map(s=>{
-              const target = parseFloat((s.signal==='SELL'?0:s.signal==='ACTIVE BUY'?5:s.signal==='ACCUMULATE'?3.5:2.5).toFixed(1));
-              const current = parseFloat((target+(-0.8+Math.random()*1.6)).toFixed(1));
-              const delta = parseFloat((target-current).toFixed(1));
-              return `<tr>
-                <td style="font-weight:700;color:var(--blue)">${s.ticker}</td>
-                <td>${s.company}</td>
-                <td style="color:var(--muted)">${current}%</td>
-                <td style="font-weight:600">${target}%</td>
-                <td style="font-weight:600;color:${delta>0?'var(--emerald)':delta<0?'var(--red)':'var(--muted)'}">${delta>0?'+':''}${delta}%</td>
-                <td>${cosSignalBadge(s.signal)}</td>
-                <td>${Math.abs(delta)>0.4?`<button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="cosIMAPublishChange()">${delta>0?'Add':'Trim'} →</button>`:'<span style="font-size:12px;color:var(--muted)">On target</span>'}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>`;
+  const m = models[cosIMAModel] || models[0];
+  const tabs = [['holdings','Holdings'],['recommendations','Recommendations'],['rebalance','\u2726 AI Rebalance'],['history','History']];
+
+  let modelList = '';
+  for (let i=0;i<models.length;i++) {
+    const mod=models[i], sel=i===cosIMAModel;
+    modelList += '<div class="card" style="padding:11px;margin-bottom:6px;cursor:pointer;border-color:'+(sel?'var(--blue)':'var(--border)')+';background:'+(sel?'var(--blue-light)':'var(--bg-card)')+'" onclick="cosIMAModel='+i+';cosIMATab=\'holdings\';cosIMARefresh()">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'+
+      '<div style="width:26px;height:26px;border-radius:6px;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">'+mod.code+'</div>'+
+      '<span style="font-size:13px;font-weight:600;color:var(--near-black)">'+mod.name+'</span></div>'+
+      '<div style="font-size:12px;color:var(--muted)">'+mod.accounts+' accts \u00b7 '+mod.aum+'</div></div>';
+  }
+
+  let tabBtns = '';
+  for (const [id,label] of tabs) {
+    tabBtns += '<button class="btn" style="font-size:12.5px;border:none;background:'+(cosIMATab===id?'#fff':'transparent')+';color:'+(cosIMATab===id?'var(--near-black)':'var(--muted)')+'" onclick="cosIMATab=\''+id+'\';cosIMARefresh()">'+label+'</button>';
+  }
+
+  let tabContent = '';
+  if (cosIMATab==='holdings') tabContent = cosIMAHoldings(m);
+  else if (cosIMATab==='recommendations') tabContent = cosIMARecommendations(m);
+  else if (cosIMATab==='rebalance') tabContent = cosIMARebalanceTab(m);
+  else if (cosIMATab==='history') tabContent = cosIMAHistory(m);
+
+  return '<div style="flex:1;display:flex;overflow:hidden">'+
+    '<div style="width:240px;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;background:var(--bg-page)">'+
+    '<div style="padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">'+
+    '<span style="font-size:13px;font-weight:600;color:var(--near-black)">IMA Models</span>'+
+    '<button class="btn btn-primary" style="font-size:12px;padding:4px 10px" onclick="cosIMANewModel()">+ New</button>'+
+    '</div><div style="flex:1;overflow:auto;padding:8px">'+modelList+'</div></div>'+
+    '<div style="flex:1;overflow:auto;padding:20px 24px">'+
+    '<div style="margin-bottom:14px"><h2 style="font-size:18px;font-weight:700;color:var(--near-black);margin-bottom:3px">'+m.name+' ('+m.code+')</h2>'+
+    '<p style="font-size:13px;color:var(--muted)">'+m.accounts+' accounts \u00b7 '+m.aum+' AUM</p></div>'+
+    '<div style="display:flex;gap:3px;background:var(--bg-page);border-radius:6px;padding:3px;border:1px solid var(--border);width:fit-content;margin-bottom:16px">'+tabBtns+'</div>'+
+    tabContent+'</div></div>';
+}
+
+function cosIMAHoldings(m) {
+  const stocks = CLIME_STOCKS.slice(0, m.stocks||8);
+  let rows = '';
+  for (const s of stocks) {
+    const target = parseFloat((s.signal==='SELL'?0:s.signal==='ACTIVE BUY'?5:s.signal==='ACCUMULATE'?3.5:s.signal==='UNDERVALUED'?3:2.5).toFixed(1));
+    const current = parseFloat(Math.max(0, target+(-0.5+Math.random())).toFixed(1));
+    const delta = parseFloat((target-current).toFixed(1));
+    rows += '<tr style="cursor:pointer" onclick="cosResearchDetail(\''+s.ticker+'\')">' +
+      '<td style="font-weight:700;color:var(--blue)">'+s.ticker+'</td><td>'+s.company+'</td>' +
+      '<td style="color:var(--muted)">'+current+'%</td><td style="font-weight:600">'+target+'%</td>' +
+      '<td style="font-weight:600;color:'+(delta>0?'var(--emerald)':delta<0?'var(--red)':'var(--muted)')+'">'+( delta>0?'+':'')+delta+'%</td>' +
+      '<td>'+cosSignalBadge(s.signal)+'</td>' +
+      '<td>'+(Math.abs(delta)>0.4?'<button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="event.stopPropagation();cosIMAPublishChange()">'+(delta>0?'Add':'Trim')+' \u2192</button>':'<span style="font-size:12px;color:var(--muted)">On target</span>')+'</td></tr>';
+  }
+  return '<div class="card section-card"><div class="section-header"><div class="section-title">Holdings</div>' +
+    '<button class="btn btn-primary" style="font-size:12.5px" onclick="cosIMAPublishChange()">Publish Change \u2192</button></div>' +
+    '<table class="data-table">'+cosTableHdr('Ticker','Company','Current %','Target %','\u0394','Signal','Action')+'<tbody>'+rows+'</tbody></table></div>';
+}
+
+function cosIMARecommendations(m) {
+  const recs=[{ticker:'SHL.AX',action:'ADD',from:'0%',to:'2%',signal:'ACTIVE BUY',eqs:79,mos:13},{ticker:'FMG.AX',action:'ADD',from:'0%',to:'2%',signal:'ACTIVE BUY',eqs:68,mos:15.5},{ticker:'CBA.AX',action:'TRIM',from:'4%',to:'2%',signal:'SELL',eqs:82,mos:-18.4}];
+  let rows='';
+  for(const r of recs){
+    rows+='<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border-light)">'+
+      '<span style="font-weight:700;color:var(--blue);width:62px">'+r.ticker+'</span>'+
+      cosBadge(r.action,r.action==='ADD'?'var(--emerald-light)':'var(--red-light)',r.action==='ADD'?'var(--emerald-text)':'var(--red)')+
+      '<span style="color:var(--muted);font-size:12.5px">'+r.from+' \u2192 '+r.to+'</span>'+cosSignalBadge(r.signal)+
+      '<span style="font-size:12px;color:var(--muted)">EQS '+r.eqs+' \u00b7 MoS '+(r.mos>0?'+':'')+r.mos+'%</span>'+
+      '<button class="btn btn-primary" style="font-size:12px;padding:4px 10px;margin-left:auto" onclick="cosToast(\'\u2713 Approved \u2014 routed to IQ\')">Approve \u2192</button>'+
+      '<button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="cosToast(\'Rejected\',\'warning\')">Reject</button></div>';
+  }
+  return '<div class="card section-card"><div class="section-header"><div class="section-title">Recommendations</div></div>'+rows+'</div>';
+}
+
+function cosIMARebalanceTab(m) {
+  return '<div class="card" style="padding:18px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
+    '<span style="font-size:18px">\u2726</span><div><div style="font-size:14px;font-weight:600">AI Rebalance \u2014 '+m.name+'</div>'+
+    '<div style="font-size:12.5px;color:var(--muted)">Clever Clime IV + macro regime + model targets</div></div>'+
+    '<button class="btn btn-primary" style="margin-left:auto" onclick="cosIMARunRebalance()">\u2726 Run Analysis \u2192</button></div>'+
+    '<div id="ima-rebalance-result" style="background:var(--bg-page);border-radius:8px;padding:14px;color:var(--muted);text-align:center">Click Run Analysis to generate recommendations.</div></div>';
+}
+
+function cosIMARunRebalance() {
+  const el=document.getElementById('ima-rebalance-result');
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:8px">\u2726 Analysing\u2026</div>';
+  setTimeout(()=>{
+    el.innerHTML='<div style="font-size:13.5px;line-height:1.8"><strong>Portfolio Health: 74/100</strong>'+
+      '<br>\u2022 <span style="color:var(--red)">TRIM CBA.AX</span> \u2014 18.4% above IV. Reduce 4\u21922%.'+
+      '<br>\u2022 <span style="color:var(--emerald)">ADD SHL.AX</span> \u2014 ACTIVE BUY, MoS +13%, EQS 79.'+
+      '<br>\u2022 <span style="color:var(--emerald)">ADD FMG.AX</span> \u2014 ACTIVE BUY, MoS +15.5%.'+
+      '<br><br><strong>Macro:</strong> NEUTRAL \u22120.42 \u2014 trim stretched, hold quality.</div>'+
+      '<div style="margin-top:14px;display:flex;gap:8px">'+
+      '<button class="btn btn-primary" onclick="cosToast(\'Routed to IQ\')">Route to IQ \u2192</button>'+
+      '<button class="btn btn-ghost" onclick="cosToast(\'Saved\')">Save</button></div>';
+  },2000);
+}
+
+function cosIMAHistory(m) {
+  const hist=[{date:'03 Apr 2026',action:'WBC.AX TRIM 4.8%\u21923.5%',status:'Pending IQ'},{date:'28 Mar 2026',action:'NAB.AX TRIM 4.9%\u21922.0%',status:'PTC Failed'},{date:'15 Mar 2026',action:'CSL.AX ADD 0%\u21923.5%',status:'Completed'},{date:'01 Mar 2026',action:'BHP.AX ADD 0%\u21922.2%',status:'Completed'}];
+  let rows='';
+  for(const h of hist) rows+='<tr><td style="color:var(--muted)">'+h.date+'</td><td style="font-weight:500">'+h.action+'</td>'+
+    '<td>'+cosBadge(m.code,'var(--blue-light)','var(--blue)')+'</td>'+
+    '<td>'+cosBadge(h.status,h.status==='Completed'?'var(--emerald-light)':h.status==='PTC Failed'?'var(--red-light)':'var(--yellow-light)',h.status==='Completed'?'var(--emerald-text)':h.status==='PTC Failed'?'var(--red)':'var(--yellow)')+'</td>'+
+    '<td style="color:var(--muted)">M. Baragwanath</td></tr>';
+  return '<div class="card section-card"><div class="section-header"><div class="section-title">History</div></div>'+
+    '<table class="data-table">'+cosTableHdr('Date','Action','Model','Status','By')+'<tbody>'+rows+'</tbody></table></div>';
+}
+
+function cosIMANewModel() {
+  cosModal('Create New IMA Model',
+    '<div style="display:flex;flex-direction:column;gap:12px">'+
+    '<div><label style="font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase">Model Name *</label>'+
+    '<input id="ima-name" placeholder="e.g. Balanced Income" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13.5px;outline:none"></div>'+
+    '<div><label style="font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase">Model Code *</label>'+
+    '<input id="ima-code" placeholder="e.g. BAL" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13.5px;outline:none"></div>'+
+    '<div><label style="font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase">Strategy</label>'+
+    '<textarea id="ima-strategy" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:13.5px;resize:vertical;outline:none"></textarea></div></div>',
+    '<button class="btn btn-ghost" onclick="this.closest(\'.modal-overlay\').remove()">Cancel</button>'+
+    '<button class="btn btn-primary" onclick="cosIMACreateModel(this)">Create \u2192</button>'
+  );
+}
+
+function cosIMACreateModel(btn) {
+  const name=document.getElementById('ima-name')?.value?.trim();
+  const code=document.getElementById('ima-code')?.value?.trim();
+  if(!name||!code){cosToast('Name and code required','error');return;}
+  btn.textContent='Creating\u2026';btn.disabled=true;
+  setTimeout(()=>{document.querySelector('.modal-overlay')?.remove();cosToast('\u2713 Model '+code+' created');climeNav('ima');},1000);
 }
 
 // ── SMA/MDA ─────────────────────────────────────────────────────────
@@ -6627,6 +6715,15 @@ function showNewTicketModal() {
   document.body.appendChild(overlay);
 }
 
+
+function cosAccRefresh() {
+  const main = document.getElementById('main-content');
+  if (main) main.innerHTML = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">' + cosRenderView('accounts') + '</div>';
+}
+function cosIQRefresh() {
+  const main = document.getElementById('main-content');
+  if (main) main.innerHTML = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">' + cosRenderView('iq') + '</div>';
+}
 
 
 // ══════════════════════════════════════════════════
