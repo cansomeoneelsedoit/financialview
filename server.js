@@ -3,12 +3,14 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from root
+app.use(express.static(path.join(__dirname)));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Serve the main HTML file for all routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'financial-view-clone.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Financial View running on port ${PORT}`);
+  console.log('Financial View running on port ' + PORT);
 });
