@@ -8,7 +8,7 @@ app.use(express.static(path.join(__dirname)));
 
 // Serve the main HTML file for all routes
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'financial-view-v3.7.html'));
+    res.sendFile(path.join(__dirname, 'financial-view-v3.8.html'));
 });
 
 app.listen(PORT, () => {
